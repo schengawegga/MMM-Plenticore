@@ -7,6 +7,7 @@ Module.register("MMM-Plenticore", {
         password: "",
         pollinterval: 20000,
         showStats: true,
+        colored: false,
         runOwnJsonApiServerInLocalNetwork: false,
         ownJsonApiServerPort: 4000,
         debugMode: false
@@ -39,6 +40,20 @@ Module.register("MMM-Plenticore", {
     // Method to update the module's DOM with received data
     updateDomWithData: function (data) {
         this.pentiData = data;
+        this.pentiDataOrig = Object.assign({}, this.pentiData);
+        this.pentiDataOrig.MaxHomeConsumptionSource = Math.max(...[this.pentiData.PvGenerator,
+                                                                (this.pentiData.Grid*-1),
+                                                                this.pentiData.Battery]);
+        this.colorPvGenerator = '#B4CD34';
+        this.colorPvGeneratorText = '#000000';
+        this.colorGridPurchase = '#C8CCCB';
+        this.colorGridPurchaseText = '#000000';
+        this.colorGridFeedIn = '#FFC033';
+        this.colorGridFeedInText = '#000000';
+        this.colorBatteryCharge = '#76DAFE';
+        this.colorBatteryChargeText = '#000000';
+        this.colorBatteryDischarge = '#1E7DB5';
+        this.colorBatteryDischargeText = '#FFFFFF';
 
         if(this.pentiData.PvGenerator >= 1000) {
             this.pentiData.PvGenerator = (this.pentiData.PvGenerator / 1000).toFixed(2) + ' kW >';
@@ -224,6 +239,64 @@ Module.register("MMM-Plenticore", {
                 textElement.textContent = this.pentiData.Battery;
                 textElement = wrapperEl.querySelector('#plentiBatterySoC');
                 textElement.textContent = this.pentiData.Battery_SoC;
+            }
+            
+            if(this.config.colored) {
+                textElement = wrapperEl.querySelector('#e');
+                if(this.pentiDataOrig.PvGenerator > 0) {
+                    textElement.style.fill = this.colorPvGenerator;
+                    wrapperEl.querySelector('#plentiPvGenerator').style.fill = this.colorPvGeneratorText;
+                    wrapperEl.querySelector('#c').style.stroke = this.colorPvGenerator;
+                }
+                
+                textElement = wrapperEl.querySelector('#j');
+                if(this.pentiDataOrig.Grid > 0) {
+                    textElement.style.fill = this.colorGridFeedIn;
+                    wrapperEl.querySelector('#plentiGrid').style.fill = this.colorGridFeedInText;
+                    wrapperEl.querySelector('#h').style.stroke = this.colorGridFeedIn;
+                } else if(this.pentiDataOrig.Grid < 0) {
+                    textElement.style.fill = this.colorGridPurchase;
+                    wrapperEl.querySelector('#plentiGrid').style.fill = this.colorGridPurchaseText;
+                    wrapperEl.querySelector('#h').style.stroke = this.colorGridPurchase;
+                }
+                
+                textElement = wrapperEl.querySelector('#o');
+                if(this.pentiDataOrig.Grid < 0) {
+                    textElement.style.fill = this.colorGridPurchase;
+                } else if(this.pentiDataOrig.Battery > 0) {
+                    textElement.style.fill = this.colorBatteryDischarge;
+                } else {
+                    textElement.style.fill = this.colorPvGenerator;
+                }
+                
+                textElement = wrapperEl.querySelector('#t');
+                if(this.pentiDataOrig.Battery < 0) {
+                    textElement.style.fill = this.colorBatteryCharge;
+                    wrapperEl.querySelector('#plentiBattery').style.fill = this.colorBatteryChargeText;
+                    wrapperEl.querySelector('#r').style.stroke = this.colorBatteryCharge;
+                } else if(this.pentiDataOrig.Battery > 0) {
+                    textElement.style.fill = this.colorBatteryDischarge;
+                    wrapperEl.querySelector('#plentiBattery').style.fill = this.colorBatteryDischargeText;
+                    wrapperEl.querySelector('#r').style.stroke = this.colorBatteryDischarge;
+                }
+                
+                textElement = wrapperEl.querySelector('#o');
+                switch(this.pentiDataOrig.MaxHomeConsumptionSource) {
+                  case (this.pentiDataOrig.Grid * -1):
+                    textElement.style.fill = this.colorGridPurchase;
+                    wrapperEl.querySelector('#plentiHome').style.fill = this.colorGridPurchaseText;
+                    wrapperEl.querySelector('#m').style.stroke = this.colorGridPurchase;
+                    break;
+                  case this.pentiDataOrig.Battery:
+                    textElement.style.fill = this.colorBatteryDischarge;
+                    wrapperEl.querySelector('#plentiHome').style.fill = this.colorBatteryDischargeText;
+                    wrapperEl.querySelector('#m').style.stroke = this.colorBatteryDischarge;
+                    break;
+                  default:
+                    textElement.style.fill = this.colorPvGenerator;
+                    wrapperEl.querySelector('#plentiHome').style.fill = this.colorPvGeneratorText;
+                    wrapperEl.querySelector('#m').style.stroke = this.colorPvGenerator;
+                }
             }
         }
 
